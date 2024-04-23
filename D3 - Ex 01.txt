@@ -1,0 +1,46 @@
+--  processamento de transações em Oracle poderia ser criar um sistema simples de transferência bancária com tratamento de transações. Aqui está um exemplo 
+
+-- D3 - Ex 01
+CREATE OR REPLACE PROCEDURE Transferir (
+    ContaOrigem INT,
+    ContaDestino INT,
+    Valor DECIMAL
+) AS
+    Origem_Saldo DECIMAL;
+BEGIN
+    -- Inicia a transação
+    BEGIN
+        -- Verifica se a conta de origem tem saldo suficiente
+        SELECT Saldo INTO Origem_Saldo
+        FROM Contas
+        WHERE ContaID = ContaOrigem;
+        
+        IF Origem_Saldo < Valor THEN
+            RAISE_APPLICATION_ERROR(-20001, 'Saldo insuficiente para a transferência');
+        END IF;
+        
+        -- Debita o valor da conta de origem
+        UPDATE Contas
+        SET Saldo = Saldo - Valor
+        WHERE ContaID = ContaOrigem;
+        
+        -- Credita o valor na conta de destino
+        UPDATE Contas
+        SET Saldo = Saldo + Valor
+        WHERE ContaID = ContaDestino;
+        
+        -- Confirma a transação
+        COMMIT;
+    EXCEPTION
+        -- Em caso de erro, desfaz a transação
+        WHEN OTHERS THEN
+            ROLLBACK;
+            RAISE;
+    END;
+END;
+
+
+-- Execute a transferência
+BEGIN
+    Transferir(1, 2, 500.00);
+END;

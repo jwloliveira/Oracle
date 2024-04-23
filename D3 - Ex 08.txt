@@ -1,0 +1,125 @@
+Bloqueio exclusivo para transferência entre contas:
+Suponha que você precise implementar uma função de transferência entre contas bancárias. Durante essa operação, é crucial garantir que o saldo das duas contas seja atualizado corretamente e que nenhuma outra transação possa interferir. Implemente um mecanismo de locking exclusivo para garantir a integridade dos saldos.
+
+Atualização concorrente de saldo com bloqueio:
+Considere uma situação em que várias transações podem atualizar o saldo de uma conta ao mesmo tempo. Implemente um mecanismo de locking que permita a atualização concorrente do saldo, mas garanta que apenas uma transação possa atualizar o saldo de uma conta específica por vez.
+
+Bloqueio em transação de múltiplos passos:
+Projete um cenário em que uma transação consista em vários passos, como verificar o saldo de uma conta, realizar uma operação e, em seguida, atualizar o saldo. Utilize o locking para garantir que cada passo seja executado de forma segura e que nenhum outro processo possa interferir até que a transação seja concluída.
+
+--
+-- Iniciar uma transação
+BEGIN
+    -- Selecionar e travar a linha para a conta de origem
+    SELECT saldo INTO saldo_origem
+    FROM contas
+    WHERE numero_conta = 'conta_origem'
+    FOR UPDATE;
+
+    -- Realizar a dedução no saldo da conta de origem
+    UPDATE contas
+    SET saldo = saldo - valor_transferencia
+    WHERE numero_conta = 'conta_origem';
+
+    -- Selecionar e travar a linha para a conta de destino
+    SELECT saldo INTO saldo_destino
+    FROM contas
+    WHERE numero_conta = 'conta_destino'
+    FOR UPDATE;
+
+    -- Realizar a adição no saldo da conta de destino
+    UPDATE contas
+    SET saldo = saldo + valor_transferencia
+    WHERE numero_conta = 'conta_destino';
+
+    -- Confirmar a transação
+    COMMIT;
+END;
+/
+
+
+---
+-- 2
+-- Criar a tabela de controle
+CREATE TABLE Contas_Atualizacao (
+    ContaID INT PRIMARY KEY,
+    Em_Uso CHAR(1) DEFAULT 'N'
+);
+
+-- Inserir dados iniciais na tabela de controle
+INSERT INTO Contas_Atualizacao (ContaID, Em_Uso) VALUES (1, 'N');
+INSERT INTO Contas_Atualizacao (ContaID, Em_Uso) VALUES (2, 'N');
+-- Adicionar mais contas conforme necessário
+
+-- Iniciar uma transação
+BEGIN
+    -- Selecionar e travar a linha para a conta que será atualizada
+    SELECT Em_Uso
+    INTO v_Em_Uso
+    FROM Contas_Atualizacao
+    WHERE ContaID = 1
+    FOR UPDATE;
+
+    -- Verificar se a conta está disponível para atualização
+    IF v_Em_Uso = 'N' THEN
+        -- Marcar a conta como em uso
+        UPDATE Contas_Atualizacao
+        SET Em_Uso = 'S'
+        WHERE ContaID = 1;
+
+        -- Realizar a atualização do saldo da conta
+        UPDATE Contas
+        SET Saldo = Saldo + 100 -- Adicionar ou subtrair o valor desejado
+        WHERE ContaID = 1;
+
+        -- Liberar a conta após a atualização
+        UPDATE Contas_Atualizacao
+        SET Em_Uso = 'N'
+        WHERE ContaID = 1;
+    ELSE
+        -- Caso a conta já esteja em uso, exibir uma mensagem de erro
+        DBMS_OUTPUT.PUT_LINE('A conta está sendo atualizada por outra transação.');
+    END IF;
+
+    -- Confirmar a transação
+    COMMIT;
+END;
+/
+
+
+---
+-- 3
+-- Iniciar uma transação
+BEGIN
+    DECLARE
+        v_SaldoAnterior NUMBER;
+        v_NovoSaldo NUMBER;
+        v_ContaID NUMBER := 1; -- ID da conta a ser processada
+        v_ValorOperacao NUMBER := 100; -- Valor a ser adicionado ou subtraído do saldo
+
+    BEGIN
+        -- Passo 1: Verificar o saldo da conta e travar a linha para atualização
+        SELECT Saldo
+        INTO v_SaldoAnterior
+        FROM Contas
+        WHERE ContaID = v_ContaID
+        FOR UPDATE;
+
+        -- Passo 2: Realizar a operação desejada (adicionar ou subtrair do saldo)
+        v_NovoSaldo := v_SaldoAnterior + v_ValorOperacao;
+
+        -- Passo 3: Atualizar o saldo da conta
+        UPDATE Contas
+        SET Saldo = v_NovoSaldo
+        WHERE ContaID = v_ContaID;
+
+        -- Confirmar a transação
+        COMMIT;
+    EXCEPTION
+        WHEN OTHERS THEN
+            -- Em caso de erro, desfazer a transação
+            ROLLBACK;
+            DBMS_OUTPUT.PUT_LINE('Erro ao processar a transação.');
+    END;
+END;
+/

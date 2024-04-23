@@ -1,0 +1,34 @@
+-- Vamos criar um exemplo onde precisamos atualizar o telefone de várias agências, mas queremos garantir que todas as atualizações sejam bem-sucedidas antes de confirmar as mudanças. Se ocorrer algum erro durante o processo, devemos desfazer todas as alterações feitas até o momento.
+
+--
+-- Início da transação
+BEGIN
+    SAVEPOINT inicio_transacao;
+
+    -- Atualiza o telefone das agências
+    UPDATE AGENCIA
+    SET FONE_AGENCIA = '999999999'
+    WHERE IND_SITUACAO = 'A'; -- Apenas agências ativas
+
+    -- Verifica se as atualizações foram bem-sucedidas
+    IF SQL%ROWCOUNT = 0 THEN
+        -- Se nenhuma linha foi atualizada, indica que não há agências ativas
+        RAISE_APPLICATION_ERROR(-20001, 'Nenhuma agência ativa encontrada');
+    END IF;
+
+    -- Verifica se todas as agências ativas foram atualizadas
+    IF SQL%ROWCOUNT < (SELECT COUNT(*) FROM AGENCIA WHERE IND_SITUACAO = 'A') THEN
+        -- Se nem todas as agências ativas foram atualizadas, desfaz as alterações
+        ROLLBACK TO inicio_transacao;
+        RAISE_APPLICATION_ERROR(-20002, 'Não foi possível atualizar todas as agências ativas');
+    END IF;
+
+    -- Confirma as alterações
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Em caso de erro, desfaz as alterações e exibe a mensagem de erro
+        ROLLBACK TO inicio_transacao;
+        RAISE;
+END;
+/

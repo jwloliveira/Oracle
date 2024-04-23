@@ -1,0 +1,48 @@
+-- exercício complexo de Transações em um contexto bancário, podemos considerar a transferência de fundos entre contas, garantindo que as transações sejam atomicamente consistentes e duráveis:
+
+CREATE OR REPLACE PROCEDURE TransferirFundos (
+    NumeroContaOrigem INT,
+    NumeroContaDestino INT,
+    ValorTransferencia DECIMAL
+) AS
+    SaldoOrigem DECIMAL;
+    SaldoDestino DECIMAL;
+BEGIN
+    -- Verifica se a conta de origem tem saldo suficiente
+    SELECT Saldo INTO SaldoOrigem
+    FROM Contas
+    WHERE NumeroConta = NumeroContaOrigem
+    FOR UPDATE;
+
+    IF SaldoOrigem >= ValorTransferencia THEN
+        -- Atualiza o saldo da conta de origem
+        UPDATE Contas
+        SET Saldo = Saldo - ValorTransferencia
+        WHERE NumeroConta = NumeroContaOrigem;
+
+        -- Atualiza o saldo da conta de destino
+        UPDATE Contas
+        SET Saldo = Saldo + ValorTransferencia
+        WHERE NumeroConta = NumeroContaDestino;
+
+        -- Registra a transação
+        INSERT INTO Transacoes (IDTransacao, NumeroContaOrigem, NumeroContaDestino, Valor, DataHora)
+        VALUES (Transacoes_Seq.NEXTVAL, NumeroContaOrigem, NumeroContaDestino, ValorTransferencia, SYSDATE);
+
+        -- Confirma a transação
+        COMMIT;
+    ELSE
+        RAISE_APPLICATION_ERROR(-20001, 'Saldo insuficiente na conta de origem');
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Em caso de erro, desfaz a transação
+        ROLLBACK;
+        RAISE;
+END;
+
+
+-- Execute uma transferência de fundos:
+BEGIN
+    TransferirFundos(123, 456, 100.00);
+END;

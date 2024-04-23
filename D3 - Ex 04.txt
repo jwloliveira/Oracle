@@ -1,0 +1,20 @@
+-- 1. Bloqueio de Conta por Tentativas de Acesso Inválidas:
+CREATE OR REPLACE PROCEDURE BloquearContaPorTentativas (
+    p_ContaID IN NUMBER,
+    p_LimiteTentativas IN NUMBER,
+    p_PeriodoBloqueio IN NUMBER
+) AS
+    v_Tentativas NUMBER;
+BEGIN
+    SELECT COUNT(*)
+    INTO v_Tentativas
+    FROM TentativasAcesso
+    WHERE ContaID = p_ContaID
+    AND DataTentativa >= SYSDATE - p_PeriodoBloqueio;
+
+    IF v_Tentativas >= p_LimiteTentativas THEN
+        UPDATE Contas
+        SET Status = 'Bloqueada'
+        WHERE ContaID = p_ContaID;
+    END IF;
+END;

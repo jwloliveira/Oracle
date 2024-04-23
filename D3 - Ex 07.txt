@@ -1,0 +1,31 @@
+-- Suponha que você tenha uma tabela chamada Conta que armazena informações sobre contas bancárias.
+-- Você precisa desenvolver uma consulta SQL que atualize o saldo de duas contas bancárias ao mesmo tempo, garantindo que nenhuma outra transação possa acessar ou modificar essas contas enquanto a sua transação estiver em andamento.
+
+-- Início da transação
+BEGIN
+    -- Seleciona os saldos das contas e aplica o lock
+    SELECT Saldo
+    INTO v_saldo_conta1
+    FROM Conta
+    WHERE NumeroConta = 1
+    FOR UPDATE;
+
+    SELECT Saldo
+    INTO v_saldo_conta2
+    FROM Conta
+    WHERE NumeroConta = 2
+    FOR UPDATE;
+
+    -- Atualiza os saldos das contas
+    UPDATE Conta
+    SET Saldo = v_saldo_conta1 + 100 -- Adiciona 100 na conta 1
+    WHERE NumeroConta = 1;
+
+    UPDATE Conta
+    SET Saldo = v_saldo_conta2 - 100 -- Subtrai 100 da conta 2
+    WHERE NumeroConta = 2;
+
+    -- Commit para efetivar as alterações
+    COMMIT;
+END;
+/

@@ -1,0 +1,36 @@
+-- Para remover o uso de uma PROCEDURE e manter apenas o SQL direto, você pode transformar o código em um bloco anônimo PL/SQL. Aqui está o código revisado para realizar a transferência sem usar uma PROCEDURE:
+
+DECLARE
+    Origem_Saldo DECIMAL;
+BEGIN
+    -- Inicia a transação
+    BEGIN
+        -- Verifica se a conta de origem tem saldo suficiente
+        SELECT Saldo INTO Origem_Saldo
+        FROM Contas
+        WHERE ContaID = 1; -- Substitua 1 pelo ID da conta de origem
+
+        IF Origem_Saldo < 500.00 THEN -- Substitua 500.00 pelo valor da transferência
+            RAISE_APPLICATION_ERROR(-20001, 'Saldo insuficiente para a transferência');
+        END IF;
+
+        -- Debita o valor da conta de origem
+        UPDATE Contas
+        SET Saldo = Saldo - 500.00 -- Substitua 500.00 pelo valor da transferência
+        WHERE ContaID = 1; -- Substitua 1 pelo ID da conta de origem
+
+        -- Credita o valor na conta de destino
+        UPDATE Contas
+        SET Saldo = Saldo + 500.00 -- Substitua 500.00 pelo valor da transferência
+        WHERE ContaID = 2; -- Substitua 2 pelo ID da conta de destino
+
+        -- Confirma a transação
+        COMMIT;
+    EXCEPTION
+        -- Em caso de erro, desfaz a transação
+        WHEN OTHERS THEN
+            ROLLBACK;
+            RAISE;
+    END;
+END;
+/

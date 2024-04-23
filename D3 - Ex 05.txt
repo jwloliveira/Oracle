@@ -1,0 +1,13 @@
+-- 2. Cálculo de Juros Compostos:
+
+CREATE OR REPLACE PROCEDURE CalcularJurosCompostos AS
+    v_TaxaJuros NUMBER := 0.05; -- 5% de taxa de juros
+    v_PeriodoMeses NUMBER;
+BEGIN
+    FOR c IN (SELECT * FROM ContasPoupanca) LOOP
+        v_PeriodoMeses := MONTHS_BETWEEN(SYSDATE, c.DataUltimoRendimento);
+        c.Saldo := c.Saldo * POWER(1 + v_TaxaJuros, v_PeriodoMeses);
+        c.DataUltimoRendimento := SYSDATE;
+        UPDATE ContasPoupanca SET Saldo = c.Saldo, DataUltimoRendimento = c.DataUltimoRendimento WHERE ContaID = c.ContaID;
+    END LOOP;
+END;

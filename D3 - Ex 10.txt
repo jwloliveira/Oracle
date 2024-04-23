@@ -1,0 +1,13 @@
+-- exercício desafiador sem o uso de procedimentos armazenados, podemos considerar uma situação em que precisamos realizar uma série de operações de atualização em várias agências bancárias com base em determinados critérios. Vamos criar um cenário onde precisamos atualizar o horário de atendimento das agências que estão abertas aos sábados.
+
+BEGIN
+    -- Atualiza o horário de atendimento para agências abertas aos sábados
+    UPDATE AGENCIA
+    SET HR_ATEN_FIM = '18:00'
+    WHERE IND_SITUACAO = 'A' -- Apenas agências ativas
+    AND HR_ATEN_INI < '12:00' -- Abertura antes do meio-dia
+    AND HR_ATEN_FIM >= '12:00' -- Fechamento ao meio-dia ou depois
+    AND TO_CHAR(ULT_ATUALIZACAO, 'DY', 'NLS_DATE_LANGUAGE=AMERICAN') = 'SAT'; -- Última atualização em um sábado
+
+    COMMIT;
+END;

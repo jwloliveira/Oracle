@@ -1,0 +1,15 @@
+-- 3. Transações em Lote:
+CREATE OR REPLACE PROCEDURE ProcessarTransacoesBatch AS
+BEGIN
+    FOR t IN (SELECT * FROM TransacoesBatch WHERE Status = 'Pendente') LOOP
+        BEGIN
+            UPDATE Contas SET Saldo = Saldo + t.Valor WHERE ContaID = t.ContaID;
+            UPDATE TransacoesBatch SET Status = 'Processada' WHERE TransacaoID = t.TransacaoID;
+            COMMIT;
+        EXCEPTION
+            WHEN OTHERS THEN
+                UPDATE TransacoesBatch SET Status = 'Erro' WHERE TransacaoID = t.TransacaoID;
+                ROLLBACK;
+        END;
+    END LOOP;
+END;

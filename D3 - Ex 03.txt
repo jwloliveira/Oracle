@@ -1,0 +1,8 @@
+exercícios desafiadores relacionados à DTL em um contexto bancário:
+
+Bloqueio de Conta por Tentativas de Acesso Inválidas:
+Crie uma tabela TentativasAcesso para registrar as tentativas de acesso inválidas às contas. Implemente um procedimento que, ao exceder um limite de tentativas inválidas, bloqueie a conta por um período de tempo.
+Cálculo de Juros Compostos:
+Crie uma tabela ContasPoupanca para armazenar contas de poupança com um campo Saldo e um campo DataUltimoRendimento. Implemente um procedimento que calcule os juros compostos das contas e atualize o saldo de acordo com a taxa de juros e o período desde a última atualização.
+Transações em Lote:
+Crie uma tabela TransacoesBatch para armazenar transações em lote a serem processadas. Implemente um procedimento que processe essas transações em lote de forma atomicamente consistente, ou seja, todas as transações são aplicadas ou nenhuma é aplicada em caso de erro.
